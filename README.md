@@ -22,3 +22,6 @@ Diseñar e implementar un flujo de trabajo DevOps que automatice el despliegue d
 ## Flujo de trabajo
 
 El desarrollo se realiza en la rama develop. Los cambios se integran a main mediante Pull Requests.
+
+## Estado del proyecto
+En desarrollo.
