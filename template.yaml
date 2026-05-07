@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Plantilla CloudFormation para crear una instancia EC2 y un bucket S3 versionado en Learner Lab.
+
+Resources:
+  DevOpsInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0c101f26f147fa7fd
+      IamInstanceProfile: LabInstanceProfile
+      Tags:
+        - Key: Name
+          Value: devops-ec2-instance
+
+  DevOpsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "devops-bucket-${AWS::AccountId}"
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Name
+          Value: devops-versioned-bucket
+
+Outputs:
+  InstanceId:
+    Description: ID de la instancia EC2 creada.
+    Value: !Ref DevOpsInstance
+
+  BucketName:
+    Description: Nombre del bucket S3 creado.
+    Value: !Ref DevOpsBucket
