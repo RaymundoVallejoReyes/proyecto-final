@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  web:
+    build: .
+    container_name: web
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    networks:
+      - devops_network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx_data:/usr/share/nginx/html
+    networks:
+      - devops_network
+
+networks:
+  devops_network:
+    name: devops_network
+    driver: bridge
