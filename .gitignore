@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.env
+venv/
+.venv/
+env/
+pip-wheel-metadata/
+dist/
+build/
+*.egg-info/
+
+# AWS
+.aws/
+*.pem
+*.key
+credentials
+config
+
+# Logs
+*.log
+logs/
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
