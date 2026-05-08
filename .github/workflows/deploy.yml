@@ -1,0 +1,99 @@
+name: CI/CD DevOps AWS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Test Flask application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: docker
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify Flask app import
+        working-directory: docker
+        run: |
+          python -c "from app import app; print('Aplicacion Flask importada correctamente')"
+
+  deploy:
+    name: Deploy application to EC2
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Get CloudFormation outputs
+        run: |
+          INSTANCE_ID=$(aws cloudformation describe-stacks \
+            --stack-name devops-stack \
+            --region us-east-1 \
+            --query "Stacks[0].Outputs[?OutputKey=='InstanceId'].OutputValue" \
+            --output text)
+
+          BUCKET_NAME=$(aws cloudformation describe-stacks \
+            --stack-name devops-stack \
+            --region us-east-1 \
+            --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
+            --output text)
+
+          echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
+          echo "BUCKET_NAME=$BUCKET_NAME" >> $GITHUB_ENV
+
+          echo "Instancia encontrada: $INSTANCE_ID"
+          echo "Bucket encontrado: $BUCKET_NAME"
+
+      - name: Compress application files
+        run: |
+          zip -r mi-app.zip docker
+
+      - name: Upload artifact to S3
+        run: |
+          aws s3 cp mi-app.zip s3://$BUCKET_NAME/mi-app.zip --region us-east-1
+
+      - name: Deploy on EC2 using SSM
+        run: |
+          aws ssm send-command \
+            --region us-east-1 \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy Flask Docker application from GitHub Actions" \
+            --parameters 'commands=[
+              "sudo yum update -y",
+              "sudo yum install -y docker unzip awscli",
+              "sudo service docker start",
+              "mkdir -p /home/ec2-user/app",
+              "aws s3 cp s3://'"$BUCKET_NAME"'/mi-app.zip /home/ec2-user/app/mi-app.zip --region us-east-1",
+              "cd /home/ec2-user/app",
+              "unzip -o mi-app.zip",
+              "cd docker",
+              "sudo docker rm -f web || true",
+              "sudo docker build -t docker-web .",
+              "sudo docker run -d --name web -p 5000:5000 docker-web",
+              "sudo docker ps"
+            ]' \
+            --output text
