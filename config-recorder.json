@@ -1,0 +1,8 @@
+{
+  "name": "devops-config-recorder",
+  "roleARN": "arn:aws:iam::505331880455:role/LabRole",
+  "recordingGroup": {
+    "allSupported": true,
+    "includeGlobalResourceTypes": false
+  }
+}
