@@ -1,0 +1,1 @@
+{"statusCode": 200, "headers": {"Content-Type": "application/json"}, "body": "{\"mensaje\": \"Microservicio activo en AWS Lambda.\", \"servicio\": \"microservicio-devops\"}"}
